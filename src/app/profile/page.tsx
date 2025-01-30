@@ -1,4 +1,5 @@
 "use client";
+
 import axios from "axios";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -21,37 +22,43 @@ export default function ProfilePage() {
   };
 
   const getUserDetails = async () => {
-    const res = await axios.get("/api/users/me");
-    console.log(res.data);
-    setData(res.data.data._id);
+    try {
+      const res = await axios.get("/api/users/me");
+      console.log(res.data);
+      setData(res.data.data._id);
+    } catch (error) {
+      console.error("Error fetching user details", error);
+      toast.error("Failed to fetch user details");
+    }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h1>Profile</h1>
-      <hr />
-      <p>Profile page</p>
-      <h2 className="p-1 rounded bg-green-500">
-        {data === "nothing" ? (
-          "Nothing"
-        ) : (
-          <Link href={`/profile/${data}`}>{data}</Link>
-        )}
-      </h2>
-      <hr />
-      <button
-        onClick={logout}
-        className="bg-blue-500 mt-4 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        Logout
-      </button>
-
-      <button
-        onClick={getUserDetails}
-        className="bg-green-800 mt-4 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        GetUser Details
-      </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 py-6 px-4">
+      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Profile</h1>
+        <p className="text-gray-600 mb-4">Welcome to your profile page</p>
+        <h2 className="p-2 rounded bg-green-500 text-white font-semibold text-center">
+          {data === "nothing" ? (
+            "No User Data"
+          ) : (
+            <Link href={`/profile/${data}`}>{data}</Link>
+          )}
+        </h2>
+        <div className="flex flex-col gap-4 mt-6">
+          <button
+            onClick={getUserDetails}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+          >
+            Get User Details
+          </button>
+          <button
+            onClick={logout}
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -19,7 +19,7 @@ export default function VerifyEmailPage() {
   };
 
   useEffect(() => {
-    const urlToken = window.location.search.split("=")[1];
+    const urlToken = new URLSearchParams(window.location.search).get("token");
     setToken(urlToken || "");
   }, []);
 
@@ -30,24 +30,38 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h1 className="text-4xl">Verify Email</h1>
-      <h2 className="p-2 bg-orange-500 text-black">
-        {token ? `${token}` : "no token"}
-      </h2>
-
-      {verified && (
-        <div>
-          <h2 className="text-2xl">Email Verified</h2>
-          <Link href="/login">Login</Link>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 py-6 px-4">
+      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md text-center">
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">
+          Verify Your Email
+        </h1>
+        <p className="text-gray-600 mb-4">
+          Please wait while we verify your email address.
+        </p>
+        <h2 className="p-2 bg-orange-500 text-white font-semibold rounded-lg inline-block">
+          {token ? `Token: ${token}` : "No token found"}
+        </h2>
+        <div className="mt-4">
+          {verified ? (
+            <div className="text-green-600 font-semibold">
+              <h2 className="text-2xl">Email Verified Successfully!</h2>
+              <Link
+                href="/login"
+                className="mt-2 inline-block text-blue-500 hover:underline"
+              >
+                Proceed to Login
+              </Link>
+            </div>
+          ) : error ? (
+            <div className="text-red-600 font-semibold">
+              <h2 className="text-2xl">Verification Failed</h2>
+              <p>Please try again or contact support.</p>
+            </div>
+          ) : (
+            <p className="text-gray-500">Verifying...</p>
+          )}
         </div>
-      )}
-
-      {error && (
-        <div>
-          <h2 className="text-2xl bg-red-500 text-black">Error</h2>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
