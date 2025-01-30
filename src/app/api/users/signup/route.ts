@@ -3,52 +3,75 @@ import User from "@/models/userModel";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
 import { sendEmail } from "@/helpers/mailer";
+import { z } from "zod";
 
+// Connect to the database
 connect();
 
-export async function POST(request: NextRequest) {
+// Define schema validation using Zod
+const signupSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    // Parse and validate request body
     const reqBody = await request.json();
-    const { username, email, password } = reqBody;
+    const parsedBody = signupSchema.safeParse(reqBody);
 
-    console.log(reqBody);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: parsedBody.error.format() },
+        { status: 400 }
+      );
+    }
 
-    // check if user already exists
-    const user = await User.findOne({ email });
+    const { username, email, password } = parsedBody.data;
+    console.log("Signup request:", email);
 
-    if (user) {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
       return NextResponse.json(
         { error: "User already exists" },
         { status: 400 }
       );
     }
 
-    // hash password
+    // Hash password
     const salt = await bcryptjs.genSalt(10);
     const hashedPassword = await bcryptjs.hash(password, salt);
 
-    const newUser = new User({
-      username,
-      email,
-      password: hashedPassword,
-    });
-
+    // Create new user
+    const newUser = new User({ username, email, password: hashedPassword });
     const savedUser = await newUser.save();
-    console.log(savedUser);
+    console.log("User created:", savedUser.email);
 
-    // send verification email
+    // Send verification email
     try {
       await sendEmail({ email, emailType: "VERIFY", userId: savedUser._id });
-    } catch (error: any) {
-      console.error("Email sending failed:", error.message);
+    } catch (error) {
+      console.error(
+        "Email sending failed:",
+        error instanceof Error ? error.message : error
+      );
     }
 
     return NextResponse.json({
       message: "User created successfully",
       success: true,
-      savedUser,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error(
+      "Signup error:",
+      error instanceof Error ? error.message : error
+    );
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,19 +12,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setButtonDisabled(!(user.email && user.password));
+    setButtonDisabled(!(user.email.trim() && user.password.trim()));
   }, [user]);
 
   const onLogin = async () => {
     try {
       setLoading(true);
       const response = await axios.post("/api/users/login", user);
-      console.log("Login success", response.data);
-      toast.success("Login successful!");
-      router.push("/profile");
+
+      if (response.data.success) {
+        toast.success("Login successful! Redirecting...");
+        router.push("/profile");
+      } else {
+        toast.error(response.data.message || "Invalid credentials");
+      }
     } catch (error: any) {
-      console.log("Login failed", error.message);
-      toast.error("Login failed. Please try again.");
+      console.log("Login failed", error);
+      const errorMessage =
+        error.response?.data?.message || "An error occurred. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -45,7 +51,7 @@ export default function LoginPage() {
               Email
             </label>
             <input
-              type="email"
+              type="text"
               id="email"
               className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               value={user.email}

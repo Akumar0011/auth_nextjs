@@ -8,7 +8,8 @@ import React, { useState } from "react";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [data, setData] = useState("nothing");
+  const [data, setData] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const logout = async () => {
     try {
@@ -17,18 +18,20 @@ export default function ProfilePage() {
       router.push("/login");
     } catch (error: any) {
       console.log(error.message);
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || "Logout failed. Try again.");
     }
   };
 
   const getUserDetails = async () => {
     try {
+      setLoading(true);
       const res = await axios.get("/api/users/me");
-      console.log(res.data);
-      setData(res.data.data._id);
+      setData(res.data?.data?._id || "No User Data");
     } catch (error) {
       console.error("Error fetching user details", error);
       toast.error("Failed to fetch user details");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -38,18 +41,21 @@ export default function ProfilePage() {
         <h1 className="text-2xl font-bold text-gray-800 mb-4">Profile</h1>
         <p className="text-gray-600 mb-4">Welcome to your profile page</p>
         <h2 className="p-2 rounded bg-green-500 text-white font-semibold text-center">
-          {data === "nothing" ? (
-            "No User Data"
-          ) : (
+          {loading ? (
+            "Loading..."
+          ) : data ? (
             <Link href={`/profile/${data}`}>{data}</Link>
+          ) : (
+            "No User Data"
           )}
         </h2>
         <div className="flex flex-col gap-4 mt-6">
           <button
             onClick={getUserDetails}
+            disabled={loading}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300"
           >
-            Get User Details
+            {loading ? "Fetching..." : "Get User Details"}
           </button>
           <button
             onClick={logout}

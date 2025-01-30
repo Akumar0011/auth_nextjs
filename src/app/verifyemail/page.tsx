@@ -4,27 +4,40 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
 export default function VerifyEmailPage() {
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState<string | null>(null);
   const [verified, setVerified] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const verifyUserEmail = async () => {
+    if (!token) return;
+
     try {
       await axios.post("/api/users/verifyemail", { token });
       setVerified(true);
+      setLoading(false);
     } catch (error: any) {
-      setError(true);
-      console.log(error.response.data);
+      setLoading(false);
+      setError(
+        error.response?.data?.message ||
+          "Verification failed. Please try again."
+      );
+      console.error("Verification Error: ", error.response?.data);
     }
   };
 
   useEffect(() => {
     const urlToken = new URLSearchParams(window.location.search).get("token");
-    setToken(urlToken || "");
+    if (urlToken) {
+      setToken(urlToken);
+    } else {
+      setError("No token found in the URL.");
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (token.length > 0) {
+    if (token) {
       verifyUserEmail();
     }
   }, [token]);
@@ -36,13 +49,16 @@ export default function VerifyEmailPage() {
           Verify Your Email
         </h1>
         <p className="text-gray-600 mb-4">
-          Please wait while we verify your email address.
+          {loading ? "Please wait while we verify your email address." : ""}
         </p>
         <h2 className="p-2 bg-orange-500 text-white font-semibold rounded-lg inline-block">
           {token ? `Token: ${token}` : "No token found"}
         </h2>
+
         <div className="mt-4">
-          {verified ? (
+          {loading && !error && !verified ? (
+            <p className="text-gray-500">Verifying...</p>
+          ) : verified ? (
             <div className="text-green-600 font-semibold">
               <h2 className="text-2xl">Email Verified Successfully!</h2>
               <Link
@@ -55,10 +71,16 @@ export default function VerifyEmailPage() {
           ) : error ? (
             <div className="text-red-600 font-semibold">
               <h2 className="text-2xl">Verification Failed</h2>
-              <p>Please try again or contact support.</p>
+              <p>{error}</p>
+              <Link
+                href="/resend-verification"
+                className="text-blue-500 hover:underline"
+              >
+                Resend Verification Email
+              </Link>
             </div>
           ) : (
-            <p className="text-gray-500">Verifying...</p>
+            <p className="text-gray-500">Verification process completed.</p>
           )}
         </div>
       </div>

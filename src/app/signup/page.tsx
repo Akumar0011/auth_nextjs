@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,19 +13,23 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setButtonDisabled(!(user.email && user.password && user.username));
+    const isValidEmail = /\S+@\S+\.\S+/.test(user.email);
+    setButtonDisabled(
+      !(user.email && isValidEmail && user.password && user.username)
+    );
   }, [user]);
 
   const onSignup = async () => {
     try {
       setLoading(true);
       const response = await axios.post("/api/users/signup", user);
-      console.log("Signup success", response.data);
-      toast.success("Signup successful!");
+      toast.success(`Signup successful! Welcome, ${user.username}`);
       router.push("/login");
     } catch (error: any) {
-      console.log("Signup failed", error.message);
-      toast.error("Signup failed. Please try again.");
+      console.log("Signup failed", error.response?.data || error.message);
+      toast.error(
+        error.response?.data?.message || "Signup failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
